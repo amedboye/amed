@@ -67,7 +67,6 @@ class KdNode :
     
 
             
-
 def buildKdTree(list_points, depth=0):
     """ Build a balanced kdtree from a list of points."""
     # Détermination de la dimension 
