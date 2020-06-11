@@ -1,0 +1,210 @@
+from math import sqrt
+import pickle
+
+
+candidate = (350,380)
+class KdNode :
+    
+    def __init__(self, point, dim, left_child, right_child):
+        self.point = point;
+        self.dim = dim;
+        self.left_child = left_child;
+        self.right_child = right_child;
+        
+#Exercice 2 -----------------------------------------------------------------------
+
+    def distToHyperplane(self, point):
+        """ Compute distance to hyperplane """
+        return point[self.dim] - self.point[self.dim]
+    
+    def contains(self, point):
+        """ Checks whether a point is in the kdtree."""
+        if self.point == point :
+            return True
+        res = False
+        if self.left_child and self.distToHyperplane(point) >= 0 :
+            res = res or self.left_child.contains(point)
+        if self.right_child and self.distToHyperplane(point) <= 0 :
+            res = res or self.right_child.contains(point)
+        return res
+    
+  
+#Exercice 3 ------------------------------------------------------------------------
+
+    def distance(self,p1,p2): 
+        """ cette fonction permet de calculer la distance entre deux point """ 
+        return sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
+    
+    
+    def nearestNeighbour(self,point, candidate):
+        """ Find the nearest neighbour in the kdtree"""
+        return self.nearestNeighbour_bis(point,candidate,dist=float('inf'))
+    
+    
+    def nearestNeighbour_bis(self,point, candidate,dist=float('inf')):
+        """ fonction auxiliaire de nearestNeighbour  """ 
+        if dist > self.distance(self.point,point) : 
+            candidate=self.point
+            dist=self.distance(self.point,point)
+        if self.distToHyperplane(point) <0 : 
+            left=self.left_child
+            right=self.right_child
+        else : 
+            right=self.left_child
+            left=self.right_child
+        if left is not None : 
+            candidate = left.nearestNeighbour_bis(point,candidate,dist)
+        if right is not None :
+            if dist > right.distToHyperplane(point) : 
+                candidate = right.nearestNeighbour_bis(point, candidate, dist)
+        return candidate
+            
+            
+    
+
+#Exercice 5 ------------------------------------------------------------------------
+
+    
+
+            
+
+def buildKdTree(list_points, depth=0):
+    """ Build a balanced kdtree from a list of points."""
+    # Détermination de la dimension 
+    dimension = depth%2
+    # Tri des points de la liste 
+    sorted(list_points)
+    n=len(list_points)
+    list1=[]
+    list2=[]
+    for i in range(int(n/2)):
+        list1.append(list_points[i])
+    for j in range(int(n/2),n):
+        list2.append(list_points[j])
+    nombre=list_points[int(n/2)]
+    return KdNode(nombre, dimension, buildKdTree(list1, depth+1), buildKdTree(list2, depth+1))
+    
+
+
+
+
+if __name__ == '__main__':
+
+    from tkinter import Tk, Canvas, Button, PhotoImage, TOP, RIGHT
+
+    def colorStr(rgb):
+        """ Generate a color string for Tkinter """
+        return "#%0.2X%0.2X%0.2X" % (rgb[0],rgb[1],rgb[2])
+    
+    
+
+    class KdTreeDrawer :
+        
+        point_radius = 4
+        line_width = 2
+        width = 800
+        height = 600
+
+        def __init__(self, fen, points, kdtree, colors) :
+            self.kdtree = kdtree
+            self.points = points
+            self.colors = colors
+            self.fen = fen
+            self.can = Canvas(fen, width=KdTreeDrawer.width, height=KdTreeDrawer.height, bg='white')
+            self.can.pack(side=TOP, padx=5, pady=5)
+
+        
+        def circle(self, center, col, rad):
+            """ Display a circle in the canvas """
+            x, y = center
+            self.can.create_oval(x - rad, y - rad, x + rad, y + rad,
+                                 outline='black', fill=col)
+            
+        """    
+        def circle_bis(slef): 
+            point=pickle.load(open("KdTree/Simple.data","rb"))
+            self.drawPoints
+            pt=nearestNeighbour(point, candidate)
+            self.can.create_oval(candidate[0] - pt[0], candidate[1] - pt[1], candidate[0] + pt[0], candidate[1] + pt[1],
+                                 outline='black', fill='red')            
+        """
+           
+                
+        
+
+        def drawPoints(self) :
+            """ Display a list of points in the canvas """
+            for p in self.points :
+                self.circle(p, colorStr(self.colors[p]), KdTreeDrawer.point_radius)
+        
+        def drawKdTree(self):
+            """ Display a KdTree in the canvas """
+            self.drawKdTreeAux(self.kdtree, 0, KdTreeDrawer.width, 0, KdTreeDrawer.height)
+            
+#Exercice 1 ----------------------------------------------------------------------------------
+
+        def drawKdTreeAux(self, kdnode, x_min, x_max, y_min, y_max):
+            """ Display the KdTree within the rectangle bounding box defined by (x_min, x_max, y_min, y_max) """
+            if kdnode!= None : 
+                (x,y)=kdnode.point
+                if kdnode.dim : 
+                    self.can.create_line(x_min,y,x_max,y,fill='red')
+                    self.drawKdTreeAux(kdnode.right_child,x_min,x_max,y,y_max)
+                    self.drawKdTreeAux(kdnode.left_child,x_min,x_max,y_min,y)
+                    
+                else :  
+                    self.can.create_line(x,y_min,x,y_max,fill='red')
+                    self.drawKdTreeAux(kdnode.right_child,x,x_max,y_min,y_max)
+                    self.drawKdTreeAux(kdnode.left_child,x_min,x,y_min,y_max)
+                                   
+                                   
+#----------------------------------------------------------------------------------------------    
+
+    example = "Simple"
+#    example = "Grid"
+#    example = "Clusters"
+#    example = "Random_10"
+#    example = "Random_100"
+#    example = "Random_1000"
+#    example = "Random_10000"
+    kdtree = pickle.load(open("KdTree/"+example+".data","rb"))
+    colors = pickle.load(open("KdTree/"+example+".color","rb"))
+    list_points = pickle.load(open("KdTree/"+example+".points","rb"))
+    
+
+    fen = Tk()
+    
+    drawer = KdTreeDrawer(fen,list_points, kdtree, colors)
+    
+    drawer.drawPoints()
+    drawer.drawKdTree()
+    
+
+    fen.mainloop()
+
+
+"""-------------------------------Tests----------------------------------"""
+
+
+#Test for contains     
+
+kdtree1= pickle.load(open("KdTree/"+example+".data","rb"))
+print(kdtree1)
+
+print(kdtree1.contains((350, 350)))
+print(kdtree1.contains((705, 500)))
+
+    
+#Test for  nearestNeighbour   
+ 
+point=(650,327)
+print("le voisin le plus proche  : ",kdtree.nearestNeighbour(point,(100,100)))
+
+#Test for buildkdtree 
+list3=[(200,400),(300,410),(145,813),(232,445),(300,200),(499,140),(702,487)]
+buildKdTree(list3,depth=0)
+
+
+
+    
+ 
